@@ -1,0 +1,4 @@
+[submodule "thirdparty/MinkowskiEngine"]
+	path = thirdparty/MinkowskiEngine
+	url = git@github.com:NVIDIA/MinkowskiEngine.git
+	# TODO maybe this version: git@github.com:chrockey/MinkowskiEngine.git
