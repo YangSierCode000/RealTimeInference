@@ -1,5 +1,8 @@
-phase=train
+# dataset=scannet
 dataset=semantic_kitti
-config=default
 
+phase=train
+config=res16unet34c
+
+python $phase.py --config=config/$dataset/$phase\_$config.gin
 python $phase.py --config=config/$dataset/$phase\_$config.gin
