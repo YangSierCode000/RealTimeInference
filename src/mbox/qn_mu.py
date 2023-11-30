@@ -38,7 +38,7 @@ if not exists(ece_dir):
 
 filelist.sort()
 
-confmat = torchmetrics.ConfusionMatrix(num_classes=NUM_OF_CLS, compute_on_step=False)
+confmat = torchmetrics.ConfusionMatrix(task="multiclass", num_classes=NUM_OF_CLS)# FIXME compute_on_step=False
 for ind in tqdm(range(len(filelist))):
     label_file = filelist[ind]
     label, seg_logit, pred = com.load_meta(label_file, 'label', 'seg_logit', 'pred')

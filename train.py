@@ -73,7 +73,7 @@ def train(project_name, run_name, save_path, lightning_module_name, data_module_
             save_dir=save_path,
             project=project_name,
             log_model=True,
-            entity="ramdrop",          # set it to your wandb username
+            entity="yangsiercode000",          # TODO set it to your wandb username
             config=hparams,
         )
     ]

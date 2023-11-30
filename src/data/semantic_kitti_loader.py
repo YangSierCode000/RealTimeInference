@@ -104,7 +104,7 @@ class SemanticKITTIDataset:
                     self.label_map[label_id] = 255
 
         self.reverse_label_name_mapping = reverse_label_name_mapping
-        self.num_classes = cnt
+        self.NUM_CLASSES = cnt
         self.angle = 0.0
 
     def set_angle(self, angle):

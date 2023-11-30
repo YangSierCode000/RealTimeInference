@@ -1,20 +1,20 @@
 # Constants
-in_channels = 3
+in_channels = 4
 out_channels = 20
 
 # Data module
 SemanticKITTIDataModule.data_root = "./dataset/s-kitti/sequences" # you need to modify this according to your data.
 SemanticKITTIDataModule.train_batch_size = None
-SemanticKITTIDataModule.val_batch_size = 1
+SemanticKITTIDataModule.val_batch_size = 100
 SemanticKITTIDataModule.train_num_workers = None
 SemanticKITTIDataModule.val_num_workers = 4
 SemanticKITTIDataModule.collation_type = "collate_minkowski"
 
+# Filtering (reduce the number of input data points)
+SemanticKITTIDataModule.num_points = 10000 # TODO change in need
+
 # Augmentation
 SemanticKITTIDataModule.voxel_size = 0.02
-
-# Filtering (reduce the number of input data points)
-SemanticKITTIDataModule.num_points = 1000 # TODO change in need
 
 # Evaluation
 eval.data_module_name = "SemanticKITTIDataModule"

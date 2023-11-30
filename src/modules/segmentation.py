@@ -37,7 +37,7 @@ class LitSegmentationModuleBase(pl.LightningModule):
 
         self.criterion = torch.nn.CrossEntropyLoss(ignore_index=ignore_label)
         self.best_metric_value = -np.inf if best_metric_type == "maximize" else np.inf
-        self.metric = torchmetrics.ConfusionMatrix(num_classes=num_classes, compute_on_step=False, dist_sync_on_step=dist_sync_metric)
+        self.metric = torchmetrics.ConfusionMatrix(task="multiclass", num_classes=num_classes, dist_sync_on_step=dist_sync_metric) # FIXME, compute_on_step=False
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(

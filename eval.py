@@ -144,7 +144,7 @@ def eval(
     data_module.setup("test")
     val_loader = data_module.val_dataloader()
 
-    confmat = torchmetrics.ConfusionMatrix(num_classes=data_module.dset_val.NUM_CLASSES, compute_on_step=False)
+    confmat = torchmetrics.ConfusionMatrix(task="multiclass", num_classes=data_module.dset_val.NUM_CLASSES) # FIXME , compute_on_step=False
 
     outputs = []
     ignore_portion = []
@@ -153,6 +153,8 @@ def eval(
         with torch.inference_mode(mode=True):
             for index, batch in enumerate(track(val_loader)):
                 in_data = ME.TensorField(features=batch["features"], coordinates=batch["coordinates"], quantization_mode=model.QMODE, device=device)
+                # print("[Model] ", model) # TODO if you want to see the model structure
+                # print("[data] ", in_data.shape) # TODO if you want to see the input shape
                 logits, emb_mu, emb_sigma = model(in_data)                     # ([Nr, 13])
                 logits = logits.mean(dim=0)
                 pred_dense = logits.argmax(dim=1, keepdim=False)
