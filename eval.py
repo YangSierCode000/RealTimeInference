@@ -108,12 +108,12 @@ def eval(
         os.makedirs(meta_dir)
 
     assert torch.cuda.is_available()
-    torch.cuda.set_device(1)
+    torch.cuda.set_device(0)
     device = torch.device("cuda")
 
     # file = wandb.restore('src/models/resunet.py', run_path='ramdrop/FastPointTransformer-release/ahuvo7vm')
 
-    ckpt = torch.load(checkpoint_path)
+    ckpt = torch.load(checkpoint_path, map_location=device)
 
     def remove_prefix(k, prefix):
         return k[len(prefix):] if k.startswith(prefix) else k

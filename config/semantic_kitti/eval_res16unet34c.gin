@@ -1,4 +1,4 @@
-include "./config/scannet/eval_default.gin"
+include "./config/semantic_kitti/eval_default.gin"
 
 # Model
 eval.model_name = "Res16UNet34C"

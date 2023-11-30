@@ -4,7 +4,7 @@ SERVER=${2:-local}
 
 if [[ $SERVER = *local* ]]; then
     echo "[FPT INFO] Running on Local: You should manually load modules..."
-    conda init zsh
+    conda init bash
     source /opt/conda/etc/profile.d/conda.sh # you may need to modify the conda path.
     export CUDA_HOME=/usr/local/cuda
 else
@@ -36,7 +36,7 @@ else
     echo "[FPT INFO] Done."
 
     echo "[FPT INFO] Installing OpenBLAS and PyTorch..."
-    conda install pytorch=1.10.0 torchvision cudatoolkit=11.1 -c pytorch -c nvidia -y
+    conda install pytorch=1.12.0 torchvision cudatoolkit=11.3 -c pytorch -c nvidia -y
     conda install numpy -y
     conda install openblas-devel -c anaconda -y
     echo "[FPT INFO] Done."
@@ -50,7 +50,7 @@ else
     echo "[FPT INFO] Done."
 
     echo "[FPT INFO] Installing MinkowskiEngine..."
-    MAX_JOBS=16 # TODO change in need
+    MAX_JOBS=32 # TODO change in need
     cd thirdparty/MinkowskiEngine
     python setup.py install --blas_include_dirs=${CONDA_PREFIX}/include --blas=openblas --force_cuda
     cd ../..
@@ -66,24 +66,15 @@ else
     echo "[FPT INFO] Done."
 
     echo "[FPT INFO] Installing other_dependency..."
-    conda install -c pytorch faiss-gpu=1.7.3 cudatoolkit=11.3 -y
-    conda install scipy==1.7.3 -y
+    conda install -c faiss-gpu=1.7.3
     pip install hydra-core==1.3.2
     pip install future-fstrings==1.2.0
-    pip install open3d==0.15.2
     pip install matin==0.1
     pip install tensorboardX==2.6
-    pip install torch-cluster==1.6.0
     pip install easydict==1.10
     pip install pickle5==0.0.12
     pip install matin==0.1  # a plotting tweak by Kaiwen
-
-    pip install lightning-bolts==0.5.0
-    pip install pytorch-lightning==1.6.4
-    pip install matplotlib==3.7.1
-    pip install matin==0.1
-    pip install torchmetrics==0.9.1
-    pip install numpy==1.20.1
+    pip install matplotlib
     echo "[FPT INFO] Done."
 
     TORCH="$(python -c "import torch; print(torch.__version__)")"

@@ -9,14 +9,9 @@ SemanticKITTIDataModule.val_batch_size = 1
 SemanticKITTIDataModule.train_num_workers = None
 SemanticKITTIDataModule.val_num_workers = 4
 SemanticKITTIDataModule.collation_type = "collate_minkowski"
-SemanticKITTIDataModule.train_transforms = None
-SemanticKITTIDataModule.eval_transforms = [
-    "DimensionlessCoordinates",
-    "NormalizeColor",
-]
 
 # Augmentation
-DimensionlessCoordinates.voxel_size = 0.02
+SemanticKITTIDataModule.voxel_size = 0.02
 
 # Filtering (reduce the number of input data points)
 SemanticKITTIDataModule.num_points = 1000 # TODO change in need
