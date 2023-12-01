@@ -152,6 +152,7 @@ class SemanticKITTIDataset:
         feat_ = block
 
         if 'train' in self.split:
+            # print("[Points] ", feat_.shape[0]) # TODO 
             if feat_.shape[0] > self.num_points:
                 inds = np.random.choice(np.arange(feat_.shape[0]), self.num_points, replace=False)  
                 pc_ = pc_[inds]

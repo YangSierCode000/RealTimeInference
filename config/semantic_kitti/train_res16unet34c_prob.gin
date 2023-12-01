@@ -7,7 +7,7 @@ include "./config/semantic_kitti/train_default.gin"
 # Trainer COPY FROM DEFAULT
 LitSegMinkowskiModuleProb.metric_weight = 1
 LitSegMinkowskiModuleProb.num_classes = %out_channels
-LitSegMinkowskiModuleProb.lr = 0.1
+LitSegMinkowskiModuleProb.lr = 0.01
 LitSegMinkowskiModuleProb.momentum = 0.9
 LitSegMinkowskiModuleProb.weight_decay = 1e-4
 LitSegMinkowskiModuleProb.warmup_steps_ratio = 0.1
