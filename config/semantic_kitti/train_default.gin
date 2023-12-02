@@ -6,21 +6,44 @@ out_channels = 19
 
 # Data module
 SemanticKITTIDataModule.data_root = "./dataset/s-kitti/sequences" # you need to modify this according to your data.
-SemanticKITTIDataModule.train_batch_size = 24
-SemanticKITTIDataModule.val_batch_size = 12
-SemanticKITTIDataModule.train_num_workers = 24
-SemanticKITTIDataModule.val_num_workers = 12
+SemanticKITTIDataModule.train_batch_size = 16
+SemanticKITTIDataModule.val_batch_size = 16
+SemanticKITTIDataModule.train_num_workers = 16
+SemanticKITTIDataModule.val_num_workers = 16
 SemanticKITTIDataModule.collation_type = "collate_minkowski"
 
 # Filtering (reduce the number of input data points)
-SemanticKITTIDataModule.num_points = 10000 # TODO change in need, range from 10000 to 150000
+SemanticKITTIDataModule.num_points = 50000 # TODO change in need, range from 10000 to 150000
 
 # Augmentation
-SemanticKITTIDataModule.voxel_size = 0.02
+SemanticKITTIDataModule.train_transforms = [
+    "DimensionlessCoordinates",
+    "RandomRotation",
+    "RandomAffine", # affine to rotate the rectangular crop
+    "CoordinateDropout",
+    "ChromaticTranslation",
+    "ChromaticJitter",
+    "RandomHorizontalFlip",
+    "RandomTranslation",
+    "ElasticDistortion",
+]
+SemanticKITTIDataModule.eval_transforms = [
+    "DimensionlessCoordinates",
+]
+
+# Augmentation
+DimensionlessCoordinates.voxel_size = 0.1
+RandomHorizontalFlip.upright_axis = "z"
+RandomAffine.upright_axis = "z"
+RandomAffine.application_ratio = 0.7
+ChromaticJitter.std = 0.01
+ChromaticJitter.application_ratio = 0.7
+ElasticDistortion.distortion_params = [(4, 16)]
+ElasticDistortion.application_ratio = 0.7
 
 # Pytorch lightning module
 LitSegmentationModuleBase.num_classes = %out_channels
-LitSegmentationModuleBase.lr = 0.01
+LitSegmentationModuleBase.lr = 0.1
 LitSegmentationModuleBase.momentum = 0.9
 LitSegmentationModuleBase.weight_decay = 1e-4
 LitSegmentationModuleBase.warmup_steps_ratio = 0.1
@@ -34,7 +57,7 @@ train.check_val_every_n_epoch = 10
 train.refresh_rate_per_second = 1
 train.best_metric = "val_mIoU"
 train.max_epoch = 100
-train.max_step = 100000
+train.max_step = 10000000
 train.save_path = "logs_semantic_kitti"
 
 # Logging
@@ -51,7 +74,6 @@ logged_hparams.keys = [
     "LitSegmentationModuleBase.warmup_steps_ratio",
     "train.max_step",
     "train.gpus",
-
 ]
 
 # override

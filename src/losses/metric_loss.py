@@ -4,6 +4,8 @@ from torch.distributions.normal import Normal
 import gin
 from src.cuda_ops_knn.pointops.functions import pointops
 
+epsilon = 1e-8  # small number to prevent divide by zero
+
 class BayesianTripletLoss(nn.Module):
 
     def __init__(self, margin=0, varPrior=1/96.0, kl_scale_factor=1e-6, distribution='gauss'):
@@ -74,8 +76,10 @@ def kl_div_gauss(mu_q, var_q, mu_p, var_p):                # (D, N), (1, N)
     #     1.0 / (var_p) * torch.sum(mu_p**2 + mu_q**2 - 2 * mu_p * mu_q, axis=1) - D + \
     #         D * (torch.log(var_p) - torch.log(var_q)))
     D, N = mu_q.shape
-
-    kl = 0.5 * ((var_q / var_p) * D + 1.0 / (var_p) * torch.sum(mu_p**2 + mu_q**2 - 2 * mu_p * mu_q, axis=0) - D + D * (torch.log(var_p) - torch.log(var_q)))
+    
+    kl = 0.5 * ((var_q / (var_p + epsilon)) * D + 
+            1.0 / (var_p + epsilon) * torch.sum(mu_p**2 + mu_q**2 - 2 * mu_p * mu_q, axis=0) - 
+            D + D * (torch.log(var_p + epsilon) - torch.log(var_q + epsilon)))
 
     return kl.mean()
 
@@ -85,7 +89,7 @@ def kl_div_vMF(mu_q, var_q):
 
     # we are estimating the variance and not kappa in the network.
     # They are propertional
-    kappa_q = 1.0 / var_q
+    kappa_q = 1.0 / (var_q + epsilon)
     kl = kappa_q - D * torch.log(2.0)
 
     return kl.mean()

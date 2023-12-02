@@ -11,7 +11,7 @@ High Complexity or High-Resource Availability: 50,000 to 150,000 points.
 ```bash
 conda activate real
 cd realtime/
-# path=nohup
-path=nohup-1
+path=nohup
+# path=nohup-1
 nohup bash train.sh >> $path.out 2>&1 &
 ```

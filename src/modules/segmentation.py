@@ -289,11 +289,7 @@ class LitSegMinkowskiModuleProb(LitSegMinkowskiModule):
             
             loss_metric, meta = self.metric_criterion(emb_mu_sparse, emb_sigma_sparse, xyz_sparse.to(self.device), labels_sparse.view(-1, 1)) # TODO could try (1) BTL (2) sysmetric KL (3) Wass.. ?
             
-            # FIXME figure it out why this happen, maybe the metric criterion not check divid 0
-            if torch.isinf(loss_metric).any():
-                loss = loss_seg
-            else:
-                loss = loss_seg + self.metric_weight * loss_metric
+            loss = loss_seg + self.metric_weight * loss_metric
                 
         else:
             loss_metric, meta = torch.tensor([0]).to(loss_seg), None
@@ -333,6 +329,7 @@ class LitSegMinkowskiModuleProb(LitSegMinkowskiModule):
                 xyz_sparse = batch["coordinates"]
 
             loss_metric, meta = self.metric_criterion(emb_mu_sparse, emb_sigma_sparse, xyz_sparse.to(emb_mu_sparse.device), labels_sparse.view(-1, 1)) # TODO could try (1) BTL (2) sysmetric KL (3) Wass.. ?
+                
             loss = loss_seg + self.metric_weight * loss_metric
 
             if self.current_epoch % 5 == 0:

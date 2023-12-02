@@ -9,6 +9,7 @@ import gin
 import pytorch_lightning as pl
 from typing import Optional
 from src.data.collate import CollationFunctionFactory
+import src.data.transforms as T
 
 label_name_mapping = {
     0: 'unlabeled',
@@ -55,22 +56,21 @@ kept_labels = [
 
 class SemanticKITTIDataset:
 
-    def __init__(self, split, root, voxel_size, num_points, sample_stride=1):
+    def __init__(self, phase, root, transform, num_points, sample_stride=1):
 
         self.root = root
-        self.split = split
-        self.voxel_size = voxel_size
+        self.transform = transform
+        self.phase = phase
         self.sample_stride = sample_stride
         self.num_points = num_points
         self.seqs = []
-        if split == 'train':
+        if self.phase == 'train':
             self.seqs = [
                 '00', '01', '02', '03', '04', '05', '06', '07', '09', '10'
             ]
-
-        elif self.split == 'val':
+        elif self.phase == 'val':
             self.seqs = ['08']
-        elif self.split == 'test':
+        elif self.phase == 'test':
             self.seqs = [
                 '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21'
             ]
@@ -113,12 +113,21 @@ class SemanticKITTIDataset:
     def __len__(self):
         return len(self.files)
 
-    def __getitem__(self, index):
+    def __getitem__(self, idx):
+        coords, feats, labels = self.get_cfl(idx)                   # (232453, 3), (232453, 3), (232453,)
+        if self.transform is not None:
+            coords, feats, labels = self.transform(coords, feats, labels)
+        coords = torch.from_numpy(coords)   # ([232453, 3])
+        feats = torch.from_numpy(feats)                    # ([232453, 3])
+        labels = torch.from_numpy(labels)                  # ([232453])
+        return coords.float(), feats.float(), labels.long(), None
+    
+    def get_cfl(self, index):
         with open(self.files[index], 'rb') as b:
             block_ = np.fromfile(b, dtype=np.float32).reshape(-1, 4)
         block = np.zeros_like(block_)
 
-        if 'train' in self.split:
+        if 'train' in self.phase:
             theta = np.random.uniform(0, 2 * np.pi)
             scale_factor = np.random.uniform(0.95, 1.05)
             rot_mat = np.array([[np.cos(theta), np.sin(theta), 0],
@@ -136,8 +145,7 @@ class SemanticKITTIDataset:
             block[:, :3] = np.dot(block[:, :3], transform_mat)
 
         block[:, 3] = block_[:, 3]
-        pc_ = np.round(block[:, :3] / self.voxel_size).astype(np.int32)
-        pc_ -= pc_.min(0, keepdims=1)   # (124668, 3)
+        pc_ = block[:, :3]
 
         label_file = self.files[index].replace('velodyne', 'labels').replace(
             '.bin', '.label')
@@ -151,19 +159,23 @@ class SemanticKITTIDataset:
         # feat_ = np.ones((pc_.shape[0], 1))
         feat_ = block
 
-        if 'train' in self.split:
-            # print("[Points] ", feat_.shape[0]) # TODO 
+        if 'train' in self.phase:
             if feat_.shape[0] > self.num_points:
                 inds = np.random.choice(np.arange(feat_.shape[0]), self.num_points, replace=False)  
                 pc_ = pc_[inds]
                 feat_ = feat_[inds]
                 labels_ = labels_[inds]
 
-        coords = torch.from_numpy(pc_)
-        feats = torch.from_numpy(feat_)
-        labels = torch.from_numpy(labels_)
+        coords = pc_
+        feats = feat_
+        labels = labels_
+        
 
-        return coords.float(), feats.float(), labels.long(), None
+        return (
+            coords.astype(np.float32), 
+            feats.astype(np.float32), 
+            labels.astype(np.int64)
+        )
 
 
 @gin.configurable
@@ -177,7 +189,8 @@ class SemanticKITTIDataModule(pl.LightningDataModule):
         train_num_workers,
         val_num_workers,
         collation_type,
-        voxel_size,
+        train_transforms,
+        eval_transforms,
         num_points,
         unlabeled_as_class=False,
     ):
@@ -188,20 +201,32 @@ class SemanticKITTIDataModule(pl.LightningDataModule):
         self.train_num_workers = train_num_workers
         self.val_num_workers = val_num_workers
         self.collate_fn = CollationFunctionFactory(collation_type)
-        self.voxel_size = voxel_size
+        self.train_transforms_ = train_transforms
+        self.eval_transforms_ = eval_transforms
         self.num_points = num_points
         self.unlabeled_as_class = unlabeled_as_class
 
     def setup(self, stage: Optional[str] = None):
-        if self.unlabeled_as_class:
-            pass
-        else:
-            self.dset_train = SemanticKITTIDataset(split="train", root=self.data_root, voxel_size=self.voxel_size, sample_stride=1, num_points=self.num_points)
+        if stage == "fit" or stage is None:
+            train_transforms = []
+            if self.train_transforms_ is not None:
+                for name in self.train_transforms_:
+                    train_transforms.append(getattr(T, name)())
+            train_transforms = T.Compose(train_transforms)
+            if self.unlabeled_as_class:
+                pass  # TODO refer to ScanNetRGBDatasetMoreCls
+            else:
+                self.dset_train = SemanticKITTIDataset("train", self.data_root, train_transforms, sample_stride=1, num_points=self.num_points)
 
+        eval_transforms = []
+        if self.eval_transforms_ is not None:
+            for name in self.eval_transforms_:
+                eval_transforms.append(getattr(T, name)())
+        eval_transforms = T.Compose(eval_transforms)
         if self.unlabeled_as_class:
-            pass
+            pass # TODO refer to ScanNetRGBDatasetMoreCls
         else:
-            self.dset_val = SemanticKITTIDataset(split="val", root=self.data_root, voxel_size=self.voxel_size, sample_stride=1, num_points=self.num_points)
+            self.dset_val = SemanticKITTIDataset("val", self.data_root, eval_transforms, sample_stride=1, num_points=self.num_points)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.dset_train, batch_size=self.train_batch_size, shuffle=True, drop_last=False, num_workers=self.train_num_workers, collate_fn=self.collate_fn)
