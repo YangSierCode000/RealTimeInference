@@ -11,7 +11,7 @@ ScanNetRGBDataModule.val_batch_size = 2
 ScanNetRGBDataModule.train_num_workers = 8
 ScanNetRGBDataModule.val_num_workers = 4
 ScanNetRGBDataModule.collation_type = "collate_minkowski"
-ScanNetRGBDataModule.train_transforms = [
+ScanNetRGBDataModule.train_transforms = [ # TODO migrate to semantic kitti
     "DimensionlessCoordinates",
     "RandomRotation",
     "RandomCrop",

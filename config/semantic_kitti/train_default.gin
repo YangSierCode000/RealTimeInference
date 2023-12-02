@@ -2,38 +2,25 @@ include "./config/default.gin"
 
 # Constants
 in_channels = 4
-out_channels = 20
+out_channels = 19
 
 # Data module
 SemanticKITTIDataModule.data_root = "./dataset/s-kitti/sequences" # you need to modify this according to your data.
 SemanticKITTIDataModule.train_batch_size = 24
-SemanticKITTIDataModule.val_batch_size = 6
+SemanticKITTIDataModule.val_batch_size = 12
 SemanticKITTIDataModule.train_num_workers = 24
-SemanticKITTIDataModule.val_num_workers = 6
+SemanticKITTIDataModule.val_num_workers = 12
 SemanticKITTIDataModule.collation_type = "collate_minkowski"
 
 # Filtering (reduce the number of input data points)
-SemanticKITTIDataModule.num_points = 10000 # TODO change in need, range from 1000 to 150000
+SemanticKITTIDataModule.num_points = 10000 # TODO change in need, range from 10000 to 150000
 
 # Augmentation
 SemanticKITTIDataModule.voxel_size = 0.02
 
-# Augmentation
-DimensionlessCoordinates.voxel_size = 0.02
-RandomCrop.x = 225
-RandomCrop.y = 225
-RandomCrop.z = 225
-RandomHorizontalFlip.upright_axis = "z"
-RandomAffine.upright_axis = "z"
-RandomAffine.application_ratio = 0.7
-ChromaticJitter.std = 0.01
-ChromaticJitter.application_ratio = 0.7
-ElasticDistortion.distortion_params = [(4, 16)]
-ElasticDistortion.application_ratio = 0.7
-
 # Pytorch lightning module
 LitSegmentationModuleBase.num_classes = %out_channels
-LitSegmentationModuleBase.lr = 0.1
+LitSegmentationModuleBase.lr = 0.01
 LitSegmentationModuleBase.momentum = 0.9
 LitSegmentationModuleBase.weight_decay = 1e-4
 LitSegmentationModuleBase.warmup_steps_ratio = 0.1
@@ -43,10 +30,10 @@ LitSegmentationModuleBase.best_metric_type = "maximize"
 train.data_module_name = "SemanticKITTIDataModule"
 train.gpus = 1
 train.log_every_n_steps = 10
-train.check_val_every_n_epoch = 1
+train.check_val_every_n_epoch = 10
 train.refresh_rate_per_second = 1
 train.best_metric = "val_mIoU"
-train.max_epoch = None
+train.max_epoch = 100
 train.max_step = 100000
 train.save_path = "logs_semantic_kitti"
 
@@ -54,19 +41,10 @@ train.save_path = "logs_semantic_kitti"
 logged_hparams.keys = [
     "train.model_name",
     "train.data_module_name",
-    "DimensionlessCoordinates.voxel_size",
     "SemanticKITTIDataModule.train_batch_size",
     "SemanticKITTIDataModule.val_batch_size",
     "SemanticKITTIDataModule.train_num_workers",
     "SemanticKITTIDataModule.val_num_workers",
-    "RandomCrop.x",
-    "RandomHorizontalFlip.upright_axis",
-    "RandomAffine.upright_axis",
-    "RandomAffine.application_ratio",
-    "ChromaticJitter.std",
-    "ChromaticJitter.application_ratio",
-    "ElasticDistortion.distortion_params",
-    "ElasticDistortion.application_ratio",
     "LitSegmentationModuleBase.lr",
     "LitSegmentationModuleBase.momentum",
     "LitSegmentationModuleBase.weight_decay",

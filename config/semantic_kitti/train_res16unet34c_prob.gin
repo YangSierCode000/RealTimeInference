@@ -1,9 +1,5 @@
 include "./config/semantic_kitti/train_default.gin"
 
-# [3] uncomment this to take label-255 as a new class 
-#ScanNetRGBDataModule.unlabeled_as_class = True
-#out_channels = 21
-
 # Trainer COPY FROM DEFAULT
 LitSegMinkowskiModuleProb.metric_weight = 1
 LitSegMinkowskiModuleProb.num_classes = %out_channels

@@ -31,4 +31,4 @@ dataset/
 logs_cue_segmentation.zip
 pretrained_models/
 
-nohup.out
+*.out
