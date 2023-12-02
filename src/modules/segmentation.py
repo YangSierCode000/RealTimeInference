@@ -284,17 +284,17 @@ class LitSegMinkowskiModuleProb(LitSegMinkowskiModule):
 
             xyz_sparse, unique_map = ME.utils.sparse_quantize(xyz_dense, return_index=True)
             labels_sparse = label_dense[unique_map]
-            # Check if emb_mu_sparse and emb_sigma_sparse are None
-            # TODO why these two metrics value would be none?
-            if emb_mu_dense.F is not None and emb_sigma_dense.F is not None:
-                emb_mu_sparse = emb_mu_dense.F[unique_map]
-                emb_sigma_sparse = emb_sigma_dense.F[unique_map]
-
-                loss_metric, meta = self.metric_criterion(emb_mu_sparse, emb_sigma_sparse, xyz_sparse.to(self.device), labels_sparse.view(-1, 1))
-                loss = loss_seg + self.metric_weight * loss_metric
+            emb_mu_sparse = emb_mu_dense.F[unique_map]
+            emb_sigma_sparse = emb_sigma_dense.F[unique_map]
+            
+            loss_metric, meta = self.metric_criterion(emb_mu_sparse, emb_sigma_sparse, xyz_sparse.to(self.device), labels_sparse.view(-1, 1)) # TODO could try (1) BTL (2) sysmetric KL (3) Wass.. ?
+            
+            # FIXME figure it out why this happen, maybe the metric criterion not check divid 0
+            if torch.isinf(loss_metric).any():
+                loss = loss_seg
             else:
-                loss_metric, meta = torch.tensor([0]).to(loss_seg.device), None
-                loss = loss_seg  # or handle differently if needed
+                loss = loss_seg + self.metric_weight * loss_metric
+                
         else:
             loss_metric, meta = torch.tensor([0]).to(loss_seg), None
             loss = loss_seg
