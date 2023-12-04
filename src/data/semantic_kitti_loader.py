@@ -56,13 +56,13 @@ kept_labels = [
 
 class SemanticKITTIDataset:
 
-    def __init__(self, phase, root, transform, num_points, sample_stride=1):
+    def __init__(self, phase, root, transform, sample_stride=1, ignore_label=255):
 
         self.root = root
         self.transform = transform
+        self.ignore_label = ignore_label
         self.phase = phase
         self.sample_stride = sample_stride
-        self.num_points = num_points
         self.seqs = []
         if self.phase == 'train':
             self.seqs = [
@@ -88,7 +88,7 @@ class SemanticKITTIDataset:
         self.label_map = np.zeros(260)
         cnt = 0
         for label_id in label_name_mapping:
-            if label_id > 250:
+            if label_id > 99:
                 if label_name_mapping[label_id].replace('moving-', '') in kept_labels:
                     self.label_map[label_id] = reverse_label_name_mapping[label_name_mapping[label_id].replace('moving-', '')]
                 else:
@@ -157,15 +157,9 @@ class SemanticKITTIDataset:
 
         labels_ = self.label_map[all_labels & 0xFFFF].astype(np.int64)  # semantic label in lower half, instance label in upper half, refer to https://github.com/PRBonn/semantic-kitti-api/blob/8e75f4d049b787321f68a11753cb5947b1e58e17/auxiliary/laserscan.py#L246
         # feat_ = np.ones((pc_.shape[0], 1))
+        
         feat_ = block
-
-        if 'train' in self.phase:
-            if feat_.shape[0] > self.num_points:
-                inds = np.random.choice(np.arange(feat_.shape[0]), self.num_points, replace=False)  
-                pc_ = pc_[inds]
-                feat_ = feat_[inds]
-                labels_ = labels_[inds]
-
+        
         coords = pc_
         feats = feat_
         labels = labels_
@@ -176,7 +170,9 @@ class SemanticKITTIDataset:
             feats.astype(np.float32), 
             labels.astype(np.int64)
         )
-
+    
+    def get_classnames(self):
+        return kept_labels
 
 @gin.configurable
 class SemanticKITTIDataModule(pl.LightningDataModule):
@@ -191,7 +187,6 @@ class SemanticKITTIDataModule(pl.LightningDataModule):
         collation_type,
         train_transforms,
         eval_transforms,
-        num_points,
         unlabeled_as_class=False,
     ):
         super(SemanticKITTIDataModule, self).__init__()
@@ -203,7 +198,6 @@ class SemanticKITTIDataModule(pl.LightningDataModule):
         self.collate_fn = CollationFunctionFactory(collation_type)
         self.train_transforms_ = train_transforms
         self.eval_transforms_ = eval_transforms
-        self.num_points = num_points
         self.unlabeled_as_class = unlabeled_as_class
 
     def setup(self, stage: Optional[str] = None):
@@ -216,7 +210,7 @@ class SemanticKITTIDataModule(pl.LightningDataModule):
             if self.unlabeled_as_class:
                 pass  # TODO refer to ScanNetRGBDatasetMoreCls
             else:
-                self.dset_train = SemanticKITTIDataset("train", self.data_root, train_transforms, sample_stride=1, num_points=self.num_points)
+                self.dset_train = SemanticKITTIDataset("train", self.data_root, train_transforms, sample_stride=1)
 
         eval_transforms = []
         if self.eval_transforms_ is not None:
@@ -226,7 +220,7 @@ class SemanticKITTIDataModule(pl.LightningDataModule):
         if self.unlabeled_as_class:
             pass # TODO refer to ScanNetRGBDatasetMoreCls
         else:
-            self.dset_val = SemanticKITTIDataset("val", self.data_root, eval_transforms, sample_stride=1, num_points=self.num_points)
+            self.dset_val = SemanticKITTIDataset("val", self.data_root, eval_transforms, sample_stride=1)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.dset_train, batch_size=self.train_batch_size, shuffle=True, drop_last=False, num_workers=self.train_num_workers, collate_fn=self.collate_fn)

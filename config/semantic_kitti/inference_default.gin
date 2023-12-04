@@ -5,9 +5,9 @@ out_channels = 19
 # Data module
 SemanticKITTIDataModule.data_root = "./dataset/s-kitti/sequences" # you need to modify this according to your data.
 SemanticKITTIDataModule.train_batch_size = None
-SemanticKITTIDataModule.val_batch_size = 48
+SemanticKITTIDataModule.val_batch_size = 20
 SemanticKITTIDataModule.train_num_workers = None
-SemanticKITTIDataModule.val_num_workers = 12
+SemanticKITTIDataModule.val_num_workers = 20
 SemanticKITTIDataModule.collation_type = "collate_minkowski"
 
 SemanticKITTIDataModule.train_transforms = None
@@ -19,4 +19,4 @@ SemanticKITTIDataModule.eval_transforms = [
 DimensionlessCoordinates.voxel_size = 0.1 # 0.1 meter
 
 # Evaluation
-eval.data_module_name = "SemanticKITTIDataModule"
+inference.data_module_name = "SemanticKITTIDataModule"

@@ -156,49 +156,53 @@ class RandomScale(object):
             )
         return coords, feats, labels
 
+@gin.configurable
+class Filtering(object):
+    def __init__(self, num_points=None):
+        self.num_points = num_points
+
+    def __call__(self, coords: np.array, feats, labels):
+        if self.num_points != None and labels.shape[0] > self.num_points:
+            inds = np.random.choice(np.arange(labels.shape[0]), self.num_points, replace=False)  
+            coords = coords[inds]
+            feats = feats[inds]
+            labels = labels[inds]
+        return coords, feats, labels
 
 @gin.configurable
 class RandomCrop(object):
-    def __init__(self, x, y, z, application_ratio=1, min_cardinality=100, max_retries=10):
+    def __init__(self, x, y, z, application_ratio=1, min_cardinality=100, max_retries=5):
         assert x > 0
         assert y > 0
         assert z > 0
         self.application_ratio = application_ratio
-        self.max_size = np.array([[x, y, z]])
+        self.ellipse_radii = np.array([x / 2, y / 2, z / 2])  # Radii of the ellipse
         self.min_cardinality = min_cardinality
         self.max_retries = max_retries
-        logging.info(f"{self.__class__.__name__} with size {self.max_size}")
+        logging.info(f"{self.__class__.__name__} with ellipse radii {self.ellipse_radii}")
 
     def __call__(self, coords: np.array, feats, labels):
         if random.random() > self.application_ratio:
             return coords, feats, labels
 
-        norm_coords = coords - coords.min(0, keepdims=True)
-        max_coords = norm_coords.max(0, keepdims=True)
-        # start range
-        coord_range = max_coords - self.max_size
-        coord_range = np.clip(coord_range, a_min=0, a_max=float("inf"))
-        # If crop size is larger than the coordinates, return orig
-        if np.prod(coord_range == 0):
-            return coords, feats, labels
+        # Check if coordinates are within the ellipsoid
+        def is_inside_ellipse(coord):
+            return sum(((coord / self.ellipse_radii) ** 2)) <= 1
 
-        # sample crop start point
-        valid = False
+        sel = np.array([is_inside_ellipse(coord) for coord in coords])
+
+        # Check cardinality and retry if necessary
+        valid = np.sum(sel) > self.min_cardinality
         retries = 0
-        while not valid:
-            min_box = np.random.rand(1, 3) * coord_range
-            max_box = min_box + self.max_size
-            sel = np.logical_and(
-                np.prod(norm_coords > min_box, 1), np.prod(norm_coords < max_box, 1)
-            )
-            if np.sum(sel) > self.min_cardinality:
-                valid = True
+        while not valid and retries < self.max_retries:
+            # Randomly shift the center of the ellipse within a range
+            ellipse_center_shift = np.random.rand(3) * self.ellipse_radii - self.ellipse_radii / 2
+            sel = np.array([is_inside_ellipse(coord + ellipse_center_shift) for coord in coords])
+            valid = np.sum(sel) > self.min_cardinality
             retries += 1
             if retries % 2 == 0:
-                # logging.warn(f"RandomCrop retries: {retries}. crop_range={coord_range}")
+                # logging.warn(f"RandomCropEllipse retries: {retries}.")
                 pass
-            if retries >= self.max_retries:
-                break
 
         if valid:
             return (
@@ -207,7 +211,6 @@ class RandomCrop(object):
                 labels if labels is None else labels[sel],
             )
         return coords, feats, labels
-
 
 @gin.configurable
 class RandomAffine(object):

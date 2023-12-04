@@ -78,7 +78,7 @@ def train(project_name, run_name, save_path, lightning_module_name, data_module_
             log_model=True,
             entity="yangsiercode000",          # TODO set it to your wandb username
             config=hparams,
-            id="ke29omho"
+            id=id
         )
     ]
 

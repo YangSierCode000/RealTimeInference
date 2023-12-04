@@ -1,0 +1,18 @@
+include "./config/semantic_kitti/train_res16unet34c_prob.gin"
+
+Filtering.num_points = 50000
+
+SemanticKITTIDataModule.train_batch_size = 20
+SemanticKITTIDataModule.train_num_workers = 20
+
+SemanticKITTIDataModule.val_batch_size = 20
+SemanticKITTIDataModule.val_num_workers = 20
+
+SemanticKITTIDataModule.eval_transforms = [
+    "RandomCrop",
+    "Filtering",
+    "DimensionlessCoordinates",
+]
+
+train.log_every_n_steps = 1
+

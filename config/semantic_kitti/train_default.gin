@@ -6,20 +6,18 @@ out_channels = 19
 
 # Data module
 SemanticKITTIDataModule.data_root = "./dataset/s-kitti/sequences" # you need to modify this according to your data.
-SemanticKITTIDataModule.train_batch_size = 20
-SemanticKITTIDataModule.val_batch_size = 12
-SemanticKITTIDataModule.train_num_workers = 20
-SemanticKITTIDataModule.val_num_workers = 12
+SemanticKITTIDataModule.train_batch_size = 10
+SemanticKITTIDataModule.val_batch_size = 6
+SemanticKITTIDataModule.train_num_workers = 10
+SemanticKITTIDataModule.val_num_workers = 6
 SemanticKITTIDataModule.collation_type = "collate_minkowski"
-
-# Filtering (reduce the number of input data points)
-SemanticKITTIDataModule.num_points = 150000 # TODO change in need, range from 10000 to 150000, together with random crop, we can use 150000
 
 # Augmentation
 SemanticKITTIDataModule.train_transforms = [
+    "RandomCrop",
+    "Filtering",
     "DimensionlessCoordinates",
     "RandomRotation",
-    "RandomCrop",
     "RandomAffine", # affine to rotate the rectangular crop
     "CoordinateDropout",
     "ChromaticTranslation",
@@ -30,14 +28,14 @@ SemanticKITTIDataModule.train_transforms = [
 ]
 SemanticKITTIDataModule.eval_transforms = [
     "DimensionlessCoordinates",
-    "RandomCrop",
 ]
 
 # Augmentation
+RandomCrop.x = 50 # 50 meter
+RandomCrop.y = 50 # 50 meter
+RandomCrop.z = 50 # 50 meter
+Filtering.num_points = None
 DimensionlessCoordinates.voxel_size = 0.1 # 0.1 meter
-RandomCrop.x = 500 # 50 meter
-RandomCrop.y = 500 # 50 meter
-RandomCrop.z = 500 # 50 meter
 RandomHorizontalFlip.upright_axis = "z"
 RandomAffine.upright_axis = "z"
 RandomAffine.application_ratio = 0.7
@@ -58,11 +56,11 @@ LitSegmentationModuleBase.best_metric_type = "maximize"
 train.data_module_name = "SemanticKITTIDataModule"
 train.gpus = 1
 train.log_every_n_steps = 5
-train.check_val_every_n_epoch = 5
+train.check_val_every_n_epoch = 1
 train.refresh_rate_per_second = 1
 train.best_metric = "val_mIoU"
-train.max_epoch = 100
-train.max_step = 10000000
+train.max_epoch = None
+train.max_step = 100000
 train.save_path = "logs_semantic_kitti"
 
 # Logging

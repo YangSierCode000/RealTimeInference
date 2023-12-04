@@ -1,16 +1,13 @@
-# dataset=scannet
 dataset=semantic_kitti
 
 phase=eval
-# config=res16unet34c
+tag=main
+id=0.3-$tag
 
-config=res16unet34c_prob
-ckpt_path=/workspace/realtime/pretrained/cue.ckpt
-
-# config=res16unet34c_probmg
-# ckpt_path=/workspace/realtime/pretrained/cueplus.ckpt
+ckpt=epoch=39-step=38280
+ckpt_path=/workspace/realtime/logs_semantic_kitti/minkprob_$tag/$ckpt.ckpt
 
 CUDA_VISIBLE_DEVICES=1 \
     python $phase.py \
-        --config=config/$dataset/$phase\_$config.gin \
+        --config=config/$dataset/$phase\_$tag.gin \
         --ckpt_path=$ckpt_path
