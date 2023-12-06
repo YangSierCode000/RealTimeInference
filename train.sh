@@ -4,7 +4,7 @@ phase=train
 tag=main
 id=0.4-$tag
 
-ckpt=epoch=39-step=38280
+ckpt=epoch=99-step=95700
 ckpt=/workspace/realtime/logs_semantic_kitti/minkprob_$tag/$ckpt.ckpt
 
 CUDA_VISIBLE_DEVICES=0 \
