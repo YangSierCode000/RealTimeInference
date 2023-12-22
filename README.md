@@ -11,6 +11,10 @@ Low Complexity Tasks or Limited Resources: 1,000 to 20,000 points.
 Moderate Complexity: 20,000 to 50,000 points.
 High Complexity or High-Resource Availability: 50,000 to 150,000 points.
 
+## Helpful information
+
+> All helper scripts are in folder `scripts`.
+
 ```bash
 conda activate real
 cd realtime/
