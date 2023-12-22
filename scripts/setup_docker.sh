@@ -1,4 +1,6 @@
 #!/bin/bash
+cd ..
+
 docker build -t real:1.0 docker
 local_dir=/home/haobo/workspace # TODO modify this in need
 container_dir=/workspace

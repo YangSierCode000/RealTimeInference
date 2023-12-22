@@ -172,19 +172,19 @@ def eval(
                 pred_sparse = pred_dense[unique_map]
                 bin_precisions, bin_counts, precisions = com.get_bins_precision(emb_sigma_sparse, pred_sparse, labels_sparse)
                 outputs.append([bin_precisions, bin_counts, precisions])
-                np.save(join(meta_dir, f'{index}_seg_logit.npy'), logits_sparse.cpu().numpy())     # ([m, N, 13])
-                np.save(join(meta_dir, f'{index}_pred.npy'), pred_sparse.cpu().numpy())
-                np.save(join(meta_dir, f'{index}_sigma.npy'), emb_sigma_sparse.cpu().numpy())
-                np.save(join(meta_dir, f'{index}_xyz.npy'), xyz_sparse[:,1:].cpu().numpy())
-                np.save(join(meta_dir, f'{index}_rgb.npy'), rgb_sparse.cpu().numpy())
-                np.save(join(meta_dir, f'{index}_label.npy'), labels_sparse.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_seg_logit.npy'), logits_sparse.cpu().numpy())     # ([m, N, 13])
+                # np.save(join(meta_dir, f'{index}_pred.npy'), pred_sparse.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_sigma.npy'), emb_sigma_sparse.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_xyz.npy'), xyz_sparse[:,1:].cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_rgb.npy'), rgb_sparse.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_label.npy'), labels_sparse.cpu().numpy())
 
-                np.save(join(meta_dir, f'{index}_seg_logit_dense.npy'), logits.cpu().numpy())     # ([m, Nr, 13])
-                np.save(join(meta_dir, f'{index}_pred_dense.npy'), pred_dense.cpu().numpy())
-                np.save(join(meta_dir, f'{index}_sigma_dense.npy'), emb_sigma_dense.F.cpu().numpy())
-                np.save(join(meta_dir, f'{index}_xyz_dense.npy'), xyz_dense[:,1:].cpu().numpy())
-                np.save(join(meta_dir, f'{index}_rgb_dense.npy'), batch["features"].cpu().numpy())
-                np.save(join(meta_dir, f'{index}_label_dense.npy'), label_dense.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_seg_logit_dense.npy'), logits.cpu().numpy())     # ([m, Nr, 13])
+                # np.save(join(meta_dir, f'{index}_pred_dense.npy'), pred_dense.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_sigma_dense.npy'), emb_sigma_dense.F.cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_xyz_dense.npy'), xyz_dense[:,1:].cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_rgb_dense.npy'), batch["features"].cpu().numpy())
+                # np.save(join(meta_dir, f'{index}_label_dense.npy'), label_dense.cpu().numpy())
 
                 mask = batch["labels"] != data_module.dset_val.ignore_label
                 ignore_portion.append(mask.float().mean())
@@ -366,7 +366,7 @@ def eval(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="./config/s3dis/eval_res16unet34c.gin")
-    parser.add_argument("--ckpt_path", type=str, default="./pretrained/res16unet34c_s3dis_4cm.ckpt") # |
+    parser.add_argument("--ckpt_path", type=str) # |
     parser.add_argument("-r", "--use_rotation_average", action="store_true")
     parser.add_argument("-v", "--voxel_size", type=float, default=None)        # overwrite voxel_size
     args = parser.parse_args()

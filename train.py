@@ -22,7 +22,7 @@ from src.utils.gin import get_all_gin_configurable_signatures, get_all_gin_param
 
 @gin.configurable
 def train(project_name, run_name, save_path, lightning_module_name, data_module_name, model_name, gpus, log_every_n_steps, check_val_every_n_epoch, refresh_rate_per_second, best_metric, max_epoch,
-          max_step, ckpt_path=None, tag=None, id=None):
+          max_step, ckpt_path=None, tag=None, id=None, restart=False):
 
     if tag:
         now = tag
@@ -107,7 +107,17 @@ def train(project_name, run_name, save_path, lightning_module_name, data_module_
     wandb.save('src/data/*', policy="now")
     wandb.save('train.py', policy="now")
 
-    trainer.fit(pl_module, data_module, ckpt_path=ckpt_path)
+    if restart:
+        ckpt = torch.load(ckpt_path)
+
+        def remove_prefix(k, prefix):
+            return k[len(prefix):] if k.startswith(prefix) else k
+
+        state_dict = {remove_prefix(k, "model."): v for k, v in ckpt["state_dict"].items()}
+        model.load_state_dict(state_dict)
+        trainer.fit(pl_module, data_module)
+    else:
+        trainer.fit(pl_module, data_module, ckpt_path=ckpt_path)
 
 def remove_prefix(k, prefix):
     return k[len(prefix):] if k.startswith(prefix) else k
@@ -121,11 +131,12 @@ if __name__ == "__main__":
     parser.add_argument("--ckpt", type=str, default=None) 
     parser.add_argument("--tag", type=str, default=None) 
     parser.add_argument("--id", type=str, default=None) 
+    parser.add_argument("--restart", action="store_true" ) 
     # parser.add_argument("-v", "--voxel_size", type=float, default=None)
     # parser.add_argument("--max_t", type=float, default=-1)
     # parser.add_argument("--metric_weight", type=float, default=-1)
     args = parser.parse_args()
-
+    
     pl.seed_everything(args.seed)
     gin.parse_config_file(args.config)
     if args.debug:
@@ -139,4 +150,4 @@ if __name__ == "__main__":
 
     setup_logger(gin.query_parameter('train.run_name'), args.debug, args.gpus)
 
-    train(data_module_name="SemanticKITTIDataModule", ckpt_path=args.ckpt, tag=args.tag, id=args.id)
+    train(data_module_name="SemanticKITTIDataModule", ckpt_path=args.ckpt, tag=args.tag, id=args.id, restart=args.restart)

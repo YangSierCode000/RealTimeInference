@@ -1,0 +1,30 @@
+include "./config/semantic_kitti/train_res16unet34c_prob.gin"
+
+SemanticKITTIDataModule.train_batch_size = 10
+SemanticKITTIDataModule.train_num_workers = 10
+
+SemanticKITTIDataModule.val_batch_size = 10
+SemanticKITTIDataModule.val_num_workers = 10
+
+SemanticKITTIDataModule.train_transforms = [
+    "DimensionlessCoordinates",
+    "RandomRotation",
+    "RandomAffine", # affine to rotate the rectangular crop
+    "CoordinateDropout",
+    "ChromaticTranslation",
+    "ChromaticJitter",
+    "RandomHorizontalFlip",
+    "RandomTranslation",
+    "ElasticDistortion",
+]
+
+SemanticKITTIDataModule.eval_transforms = [
+    "DimensionlessCoordinates",
+]
+
+# LitSegmentationModuleBase.lr = 0.01
+# LitSegmentationModuleBase.weight_decay = 0.01
+
+train.max_step = 50000
+train.check_val_every_n_epoch = 10
+

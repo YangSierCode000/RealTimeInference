@@ -1,0 +1,15 @@
+include "./config/semantic_kitti/inference_res16unet34c_prob.gin"
+
+SemanticKITTIDataModule.val_batch_size = 1
+SemanticKITTIDataModule.val_num_workers = 1
+
+SemanticKITTIDataModule.eval_transforms = [
+    "RandomCrop",
+    "Filtering",
+    "DimensionlessCoordinates",
+]
+
+RandomCrop.x = 50 # 50 meter
+RandomCrop.y = 50 # 50 meter
+RandomCrop.z = 50 # 50 meter
+Filtering.num_points = 50000

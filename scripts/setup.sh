@@ -1,4 +1,5 @@
 #!/bin/bash
+cd ..
 
 SERVER=${2:-local} 
 

@@ -124,7 +124,10 @@ def inference(
     checkpoint_path,
     model_name,
     data_module_name,
-    save_report=False
+    save_report=False,
+    duplicate=False, # experiment setting
+    client=None,
+    return_model = False
 ):
 
     inference_dir = join(dirname(checkpoint_path), f"inference_{datetime.now().strftime('%m%d_%H%M%S')}")
@@ -143,9 +146,11 @@ def inference(
 
     state_dict = {remove_prefix(k, "model."): v for k, v in ckpt["state_dict"].items()}
     model = get_model(model_name)()
-    model.load_state_dict(state_dict)
+    model.load_state_dict(state_dict, strict=False)
     model = model.to(device)
     model.eval()
+    if return_model:
+        return model
 
     data_module = get_data_module(data_module_name)()
     data_module.setup("test")
@@ -159,35 +164,93 @@ def inference(
         print('CUE inference route')
         with torch.inference_mode(mode=True):
             for index, batch in enumerate(track(val_loader)):
+                
+                # Only read one input
                 if index == 1:
                     break
                 
-                print("Log: number of points:", batch["coordinates"].shape)
-                
-                plot_pc(batch["coordinates"][batch["labels"] != 255], batch["labels"][batch["labels"] != 255], join(meta_dir, '3d_scatter_plot.png'))
-                create_ply_file(np.array(batch["coordinates"]), join(meta_dir, "point_cloud.ply"))
-
+                xyz_dense = batch["coordinates"]
+                label_dense = batch["labels"]
+                xyz_sparse, unique_map = ME.utils.sparse_quantize(xyz_dense, return_index=True)
+                                
                 in_data = ME.TensorField(features=batch["features"], coordinates=batch["coordinates"], quantization_mode=model.QMODE, device=device)
                 # print("[Model] ", model) # TODO if you want to see the model structure
-                # print("[data] ", in_data.shape) # TODO if you want to see the input shape
+                # print("[data] ", in_data.shape) # TODO if you want to see the input shape                
                 logits, emb_mu, emb_sigma = model(in_data)                     # ([Nr, 13])
+
+                    
+                if duplicate or client != None:
+                    print("Log: communicate with server to get the better result.")
+                    
+                    # Filter x based on emb_sigma2
+                    emb_sigma_dense = emb_sigma.slice(in_data)
+                    emb_sigma_sparse = emb_sigma_dense.F
+                    mask = emb_sigma_sparse > 0.0065 # this is get from the evaluation result.
+                    mask = mask[:,0]
+                
+                    # TODO ADD GLOBAL FEATURES
+                    in_data_for_communication = ME.TensorField(features=batch["features"][mask], coordinates=batch["coordinates"][mask], quantization_mode=model.QMODE, device=device)
+                    if duplicate:
+                        out_logits, out_emb_mu, out_emb_sigma = model(in_data_for_communication)
+                                            # Convert SparseTensors to dense tensors for manipulation
+                                            
+                        # emb_mu_dense = emb_mu.slice(in_data).F
+                        # out_emb_mu_dense = out_emb_mu.slice(in_data_for_communication).F
+                        # result_dense = torch.empty_like(emb_mu_dense)
+                        # result_dense[mask] = out_emb_mu_dense
+                        # result_dense[~mask] = emb_mu_dense[~mask]
+                        # emb_mu = ME.SparseTensor(features=result_dense, coordinates=batch["coordinates"], quantization_mode=model.QMODE, device=device)
+                    
+                        # emb_sigma_dense = emb_sigma.slice(in_data).F
+                        # out_emb_sigma_dense = out_emb_sigma.slice(in_data_for_communication).F
+                        # result_dense = torch.empty_like(emb_sigma_dense)
+                        # result_dense[mask] = out_emb_sigma_dense
+                        # result_dense[~mask] = emb_sigma_dense[~mask]
+                        # emb_sigma = ME.SparseTensor(features=result_dense, coordinates=batch["coordinates"], quantization_mode=model.QMODE, device=device)
+
+                    else: # client
+                        output = client.send_data({"batch_features": in_data_for_communication.features, "batch_coordinates": in_data_for_communication.coordinates})  
+                        out_logits = output["logits"]  
+                        # TODO reconstruct sparse tensor is a challenge. 
+                        # out_emb_mu = ME.SparseTensor(features=output["emb_mu_features"], coordinates=output["emb_mu_coordinates"], quantization_mode=model.QMODE, device=device)         
+                        # out_emb_sigma = ME.SparseTensor(features=output["emb_sigma_features"], coordinates=output["emb_sigma_coordinates"], quantization_mode=model.QMODE, device=device)         
+                    
+                    mask_unsqueezed = mask.unsqueeze(0)
+                    logits[mask_unsqueezed] = out_logits
+                    
+
                 logits = logits.mean(dim=0)
                 pred_dense = logits.argmax(dim=1, keepdim=False)
                 emb_mu_dense = emb_mu.slice(in_data)           # TensorField
                 emb_sigma_dense = emb_sigma.slice(in_data)     # TensorField
-                xyz_dense = batch["coordinates"]
-                label_dense = batch["labels"]
-
-                xyz_sparse, unique_map = ME.utils.sparse_quantize(xyz_dense, return_index=True)
+                
                 labels_sparse = label_dense[unique_map]
                 emb_mu_sparse = emb_mu_dense.F[unique_map]
                 emb_sigma_sparse = emb_sigma_dense.F[unique_map]
                 logits_sparse = logits[unique_map]   # logits[:,unique_map,:]
                 rgb_sparse = batch["features"][unique_map]
                 pred_sparse = pred_dense[unique_map]
+                
+
                 bin_precisions, bin_counts, precisions = com.get_bins_precision(emb_sigma_sparse, pred_sparse, labels_sparse)
                 outputs.append([bin_precisions, bin_counts, precisions])
                 
+                # TODO display the uncertainty distribution
+                if True:
+                    print("Log: number of points:", batch["coordinates"].shape)
+                    create_ply_file(np.array(batch["coordinates"]), join(meta_dir, "point_cloud.ply"))
+                    
+                    emb_sigma = emb_sigma_sparse.cpu().numpy()
+                    plt.hist(emb_sigma)
+                    plt.savefig(join(meta_dir, "temp_emb_sigma.png"))
+                                        
+                    ent = com.score_to_entropy(logits_sparse)
+                    plt.hist(ent)
+                    plt.savefig(join(meta_dir, "temp_ent.png"))
+                                        
+                    # Plot unsure points                
+                    plot_pc(batch["coordinates"][unique_map][emb_sigma[:,0] > 0.0065], emb_sigma[emb_sigma > 0.0065], join(meta_dir, 'uncertain_points.png'))
+                                    
                 if save_report:
                     np.save(join(meta_dir, f'{index}_seg_logit.npy'), logits_sparse.cpu().numpy())     # ([m, N, 13])
                     np.save(join(meta_dir, f'{index}_pred.npy'), pred_sparse.cpu().numpy())
