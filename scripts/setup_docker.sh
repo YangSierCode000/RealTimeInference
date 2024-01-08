@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ..
 
-docker build -t real:1.0 docker
+# docker build -t discover304/real:1.1 ../docker
 local_dir=/home/haobo/workspace # TODO modify this in need
 container_dir=/workspace
 docker run \
@@ -13,4 +13,4 @@ docker run \
     -v /mnt/data/DataSet/S-KITTI/dataset:/mnt/data/DataSet/S-KITTI/dataset \
     --shm-size 32G \
     --ipc=host \
-    real:1.1
+     discover304/real:1.1
