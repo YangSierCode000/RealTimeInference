@@ -41,6 +41,7 @@ if __name__ == "__main__":
                            "emb_mu_coordinates": emb_mu.coordinates, 
                            "emb_sigma_coordinates": emb_sigma.coordinates
                            })
+            print("Log: number of points:", coordinates.shape)
 
     t1 = Thread(target=run)
     t2 = Thread(target=server.run, args=("localhost", 8888))

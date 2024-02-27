@@ -13,7 +13,7 @@ phase=inference
 tag=mini
 ckpt=epoch=74-step=28725
 
-ckpt_path=/workspace/realtime/logs_semantic_kitti/minkprob_$tag/$ckpt.ckpt
+ckpt_path=/workspace/logs_semantic_kitti/minkprob_$tag/$ckpt.ckpt
 
 CUDA_VISIBLE_DEVICES=1 \
     python $phase.py \

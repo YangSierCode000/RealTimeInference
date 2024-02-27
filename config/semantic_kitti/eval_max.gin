@@ -1,8 +1,0 @@
-include "./config/semantic_kitti/eval_res16unet34c_prob.gin"
-
-SemanticKITTIDataModule.val_batch_size = 20
-SemanticKITTIDataModule.val_num_workers = 20
-
-SemanticKITTIDataModule.eval_transforms = [
-    "DimensionlessCoordinates",
-]

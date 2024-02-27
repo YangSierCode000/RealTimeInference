@@ -17,9 +17,13 @@ High Complexity or High-Resource Availability: 50,000 to 150,000 points.
 
 ```bash
 conda activate real
-cd realtime/
 
 path=nohup
 # path=nohup-1
 nohup bash train.sh >> $path.out 2>&1 &
 ```
+
+## Plan
+
+1. clear all redundant training codes, leave all checkponints and previous result stay there for later evaluation.
+2. implement a ns-3 simulation based on this deploy version of code, and try to evaluate further.

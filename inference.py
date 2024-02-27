@@ -127,7 +127,8 @@ def inference(
     save_report=False,
     duplicate=False, # experiment setting
     client=None,
-    return_model = False
+    return_model = False,
+    number_inputs = 1
 ):
 
     inference_dir = join(dirname(checkpoint_path), f"inference_{datetime.now().strftime('%m%d_%H%M%S')}")
@@ -166,7 +167,7 @@ def inference(
             for index, batch in enumerate(track(val_loader)):
                 
                 # Only read one input
-                if index == 1:
+                if index == number_inputs:
                     break
                 
                 xyz_dense = batch["coordinates"]

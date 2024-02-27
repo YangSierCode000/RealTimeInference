@@ -12,5 +12,5 @@ if __name__ == '__main__':
     
     client = SplitClient('http://localhost:8888', 'secret_api_key')
     
-    inference(checkpoint_path=args.ckpt_path, data_module_name="SemanticKITTIDataModule", client = client)
+    inference(checkpoint_path=args.ckpt_path, data_module_name="SemanticKITTIDataModule", client = client, number_inputs=10)
 
