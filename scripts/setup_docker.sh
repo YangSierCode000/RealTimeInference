@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ..
 
-docker build -t discover304/real:1.1 ../docker
+# docker build -t discover304/real:1.1 ../docker
 local_dir=/home/administrator/RealTimeInference # TODO modify this in need
 container_dir=/workspace
 docker run \

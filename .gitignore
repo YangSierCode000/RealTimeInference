@@ -32,3 +32,4 @@ logs_cue_segmentation.zip
 pretrained_models/
 
 *.out
+build/
